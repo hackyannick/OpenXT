@@ -29,6 +29,8 @@ for build, BIOS and installation instructions and known limitations.
   (Intel PREBOOT.EXE, wiki.qemu-project.org, efibootmgr `master` branch,
   uefi.org dbx). Not 845 G7 specific; drop them once xenclient-oe master
   carries equivalent fixes.
+- `recipes-extended/xen`: refreshed kconfig-grant-table-v2-interface patch for
+  stable-4.21 after XSA-517, and Xen pinned to the verified commit.
 - `recipes-devtools/dojo` + `HOSTTOOLS_append = " java"` in `conf/layer.conf`:
   run the Dojo UI build with the host Java instead of building icedtea7-native
   and the meta-java bootstrap chain (several of its sources are gone). The
