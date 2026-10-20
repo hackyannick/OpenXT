@@ -188,6 +188,19 @@ Installation und BIOS-Einstellungen am EliteBook: siehe [README.md](README.md).
 
 ## Wenn etwas schiefgeht
 
+- **`docker build` meldet `403 Forbidden: all proposed auth schemes denied`
+  oder `429 Too Many Requests` für `docker.io/library/ubuntu`:** Docker schickt
+  ungültige Docker-Hub-Zugangsdaten mit (häufig ein Rest von Docker Desktop),
+  oder Docker Hub begrenzt die Downloads. Abhilfe:
+  1. `docker logout` ausführen und in `~/.docker/config.json` einen Eintrag
+     `"credsStore": "desktop"` entfernen, falls vorhanden. Danach mit
+     `docker pull hello-world` testen.
+  2. Oder Docker Hub ganz umgehen und das Basis-Image von Googles Mirror holen:
+     ```bash
+     docker build --platform linux/amd64 \
+         --build-arg BASE_IMAGE=mirror.gcr.io/library/ubuntu:20.04 \
+         -t openxt-builder elitebook-845g7/docker
+     ```
 - **`docker build` schlägt bei GHC oder `repo` fehl:** Download-Problem, den
   Befehl wiederholen.
 - **Build bricht mit „No space left on device“ ab:** Docker-Disk-Limit

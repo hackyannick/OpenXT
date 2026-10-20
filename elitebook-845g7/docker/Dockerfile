@@ -6,7 +6,10 @@
 #
 # On Apple Silicon this runs through Rosetta (--platform linux/amd64).
 
-FROM ubuntu:20.04
+# Override with --build-arg BASE_IMAGE=... to use a registry mirror, e.g.
+# mirror.gcr.io/library/ubuntu:20.04 when Docker Hub is not reachable.
+ARG BASE_IMAGE=ubuntu:20.04
+FROM ${BASE_IMAGE}
 
 ARG UNAME=build
 ARG UID=1000
