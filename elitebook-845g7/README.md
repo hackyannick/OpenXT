@@ -23,6 +23,9 @@ den offiziellen OpenXT-Stand (`openxt-manifest` + `bordel`) aufgesetzt.
 | Ethernet (NDVM) | Firmware für RTL8111H fehlt | `linux-firmware-rtl8168` |
 | OVMF (UEFI-Gäste) | Intel hat `PREBOOT.EXE` (E1000-PXE-Treiber) vom Server genommen → Download schlägt fehl, Build bricht ab | OVMF ohne E1000 bauen (wie in `apertussolutions/xenclient-oe`); UEFI-Gäste verlieren nur PXE-Boot über die emulierte e1000-Karte |
 | QEMU (Device Model) | `wiki.qemu-project.org/download` existiert nicht mehr | Gleiches Tarball von `download.qemu.org` (Prüfsummen unverändert) |
+| efibootmgr (Installer) | Upstream-Branch `master` gelöscht | Gleiche Version vom Branch `rawhide` |
+| varstored (Secure Boot für VMs) | Sperrliste `dbxupdate_x64.bin` nicht mehr bei uefi.org | Byte-identische Datei aus Microsofts `secureboot_objects`-Repository |
+| Java für Dojo (UI-Build) | Java-7-Bootstrap (`icedtea7-native`) braucht zehn Quellen, die nicht mehr ladbar sind (u. a. archive.apache.org: 403) | Java aus dem Build-Container (OpenJDK 8) statt Eigenbau; spart zudem Stunden |
 | Boot (xen.efi) | `openxt.cfg` startet immer tboot/Intel TXT und lädt Intel-Microcode | AMD-`openxt.cfg` ohne tboot/SINIT, AMD-Microcode (Fam. 17h), dom0 1 GiB |
 
 Alle Kernel-Optionen werden beim Build geprüft: Fällt eine Option wegen

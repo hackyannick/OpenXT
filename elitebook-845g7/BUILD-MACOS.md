@@ -50,7 +50,8 @@ docker build --platform linux/amd64 -t openxt-builder elitebook-845g7/docker
 ```
 
 Das Image enthält alle Build-Abhängigkeiten, GHC 8.10.7 (für die
-Haskell-Teile von OpenXT) und `repo`.
+Haskell-Teile von OpenXT), OpenJDK 8 (für den Dojo-Build der Oberfläche) und
+`repo`.
 
 > Sobald der Branch nach `main` gemerged ist, `-b claude/sweet-carson-kvc649`
 > weglassen.

@@ -27,7 +27,8 @@ RUN apt-get update && apt-get install -yq \
         guilt acpica-tools quilt bin86 bcc libsdl1.2-dev liburi-perl \
         genisoimage policycoreutils vim rpm curl libncurses5-dev \
         libncursesw5 libtinfo5 libc6-dev-i386 libelf-dev xorriso mtools \
-        dosfstools libgmp-dev file ca-certificates locales sudo && \
+        dosfstools libgmp-dev file ca-certificates locales sudo \
+        openjdk-8-jre-headless && \
     rm -rf /var/lib/apt/lists/* && \
     echo "dash dash/sh boolean false" | debconf-set-selections && \
     dpkg-reconfigure dash
