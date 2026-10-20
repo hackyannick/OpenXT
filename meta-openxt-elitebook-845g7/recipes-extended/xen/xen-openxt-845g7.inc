@@ -1,4 +1,5 @@
-# Shared by xen_git.bbappend and xen-tools_git.bbappend.
+# Shared by the bbappends of every recipe built from the Xen tree with
+# xen-common.inc: xen_git, xen-tools_git and xen-ocaml-libs.
 #
 # xenclient-oe builds Xen from the tip of stable-4.21 (AUTOREV). Its
 # kconfig-grant-table-v2-interface.patch stopped applying with
@@ -10,8 +11,9 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 # Pin to the stable-4.21 commit the patch queue was verified against, so a
-# later stable-4.21 push cannot break the build halfway. Hypervisor and
-# tools must use the same revision. Bump deliberately to pick up newer fixes.
+# later stable-4.21 push cannot break the build halfway. Hypervisor, tools
+# and the OCaml xenstored must use the same revision. Bump deliberately to
+# pick up newer fixes.
 OPENXT_XEN_SRCREV = "b734d29eea2fac3ac459ac3275a7f8790db50490"
 
 # Swap the patch in place (later patches in the queue depend on it, so it
