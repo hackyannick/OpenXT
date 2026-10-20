@@ -30,14 +30,16 @@ die Kconfig von Linux 6.1.38 und die Upstream-defconfigs getestet.
 
 ## Build
 
-Voraussetzungen: Build-Host bzw. Docker-Container wie in
-[bordel](https://github.com/OpenXT/bordel) beschrieben, `repo`, GHC 8.10.7
-(siehe [openxt-manifest](https://github.com/OpenXT/openxt-manifest)),
-ca. 300 GB freier Platz.
+**Schritt-für-Schritt-Anleitung für macOS/Apple Silicon (und Cloud-Server):
+[BUILD-MACOS.md](BUILD-MACOS.md).**
+
+Gebaut wird auf x86_64-Linux. Das Dockerfile in [`docker/`](docker) enthält
+alle Abhängigkeiten (Ubuntu 20.04, GHC 8.10.7, `repo`). Auf einem eigenen
+Linux-Host mit diesen Abhängigkeiten geht es auch direkt:
 
 ```bash
-git clone https://github.com/hackyannick/OpenXT.git
-OpenXT/elitebook-845g7/setup-workspace.sh ~/openxt-workspace
+git clone https://github.com/hackyannick/OpenXT.git ~/openxt-workspace/OpenXT
+OPENXT_THREADS=16 ~/openxt-workspace/OpenXT/elitebook-845g7/setup-workspace.sh ~/openxt-workspace
 
 cd ~/openxt-workspace
 openxt/bordel/bordel -i 845g7 certs create all
