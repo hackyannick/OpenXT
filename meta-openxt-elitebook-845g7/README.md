@@ -31,6 +31,9 @@ for build, BIOS and installation instructions and known limitations.
   carries equivalent fixes.
 - `recipes-extended/xen`: refreshed kconfig-grant-table-v2-interface patch for
   stable-4.21 after XSA-517, and Xen pinned to the verified commit.
+- `recipes-devtools/qemu`: backport QEMU 6bd17dccb6 to qemu-system-native so
+  qemu-img does not use the legacy signalfd syscall, which Rosetta 2 does not
+  implement (x86_64 build containers on Apple Silicon).
 - `recipes-devtools/dojo` + `HOSTTOOLS_append = " java"` in `conf/layer.conf`:
   run the Dojo UI build with the host Java instead of building icedtea7-native
   and the meta-java bootstrap chain (several of its sources are gone). The

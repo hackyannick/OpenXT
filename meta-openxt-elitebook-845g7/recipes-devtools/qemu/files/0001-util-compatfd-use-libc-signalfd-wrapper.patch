@@ -1,0 +1,41 @@
+From: OpenXT EliteBook 845 G7 layer
+Subject: [PATCH] util/compatfd: use the libc signalfd() wrapper
+
+qemu_signalfd() invokes the legacy signalfd syscall (x86_64 nr 282)
+directly. Rosetta 2, used to run x86_64 build containers on Apple
+Silicon, does not implement it and kills the process with SIGTRAP
+("rosetta error: Unimplemented syscall number 282"), so qemu-img fails.
+glibc's signalfd() uses signalfd4, which is available everywhere QEMU
+runs; SFD_CLOEXEC replaces the separate qemu_set_cloexec() call.
+
+Backport of upstream QEMU commit 6bd17dccb63e ("util/compatfd.c: use libc
+signalfd wrapper instead of raw syscall", QEMU 6.2).
+
+Upstream-Status: Backport [6bd17dccb63e]
+---
+diff --git a/util/compatfd.c b/util/compatfd.c
+index c296f55..6a6c419 100644
+--- a/util/compatfd.c
++++ b/util/compatfd.c
+@@ -16,7 +16,9 @@
+ #include "qemu/osdep.h"
+ #include "qemu/thread.h"
+ 
+-#include <sys/syscall.h>
++#if defined(CONFIG_SIGNALFD)
++#include <sys/signalfd.h>
++#endif
+ 
+ struct sigfd_compat_info
+ {
+@@ -98,9 +100,8 @@ int qemu_signalfd(const sigset_t *mask)
+ #if defined(CONFIG_SIGNALFD)
+     int ret;
+ 
+-    ret = syscall(SYS_signalfd, -1, mask, _NSIG / 8);
++    ret = signalfd(-1, mask, SFD_CLOEXEC);
+     if (ret != -1) {
+-        qemu_set_cloexec(ret);
+         return ret;
+     }
+ #endif

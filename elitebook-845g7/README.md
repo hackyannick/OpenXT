@@ -27,6 +27,7 @@ den offiziellen OpenXT-Stand (`openxt-manifest` + `bordel`) aufgesetzt.
 | varstored (Secure Boot für VMs) | Sperrliste `dbxupdate_x64.bin` nicht mehr bei uefi.org | Byte-identische Datei aus Microsofts `secureboot_objects`-Repository |
 | Java für Dojo (UI-Build) | Java-7-Bootstrap (`icedtea7-native`) braucht zehn Quellen, die nicht mehr ladbar sind (u. a. archive.apache.org: 403) | Java aus dem Build-Container (OpenJDK 8) statt Eigenbau; spart zudem Stunden |
 | Xen 4.21 | Xen-Sicherheitsfix XSA-517 (13.10.2026) bricht OpenXTs Grant-Table-Patch; Xen folgt ungepinnt dem Branch-Ende | Patch an den neuen Code angepasst (komplette Patch-Queue angewendet, Hypervisor gebaut); Xen auf den geprüften Commit gepinnt |
+| qemu-img unter Rosetta (Apple Silicon) | QEMU 4.2 ruft den alten `signalfd`-Syscall (Nr. 282) direkt auf; Rosetta kennt ihn nicht → Absturz beim Erzeugen der VM-Images | Backport des QEMU-Upstream-Commits `6bd17dccb6` (glibc-`signalfd()` → `signalfd4`) für `qemu-system-native` |
 | Boot (xen.efi) | `openxt.cfg` startet immer tboot/Intel TXT und lädt Intel-Microcode | AMD-`openxt.cfg` ohne tboot/SINIT, AMD-Microcode (Fam. 17h), dom0 1 GiB |
 
 Alle Kernel-Optionen werden beim Build geprüft: Fällt eine Option wegen

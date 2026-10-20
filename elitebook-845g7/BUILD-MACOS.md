@@ -223,5 +223,9 @@ Installation und BIOS-Einstellungen am EliteBook: siehe [README.md](README.md).
   OpenXT-Mirror `openxt.ainfosec.com`. Ist der nicht erreichbar, den Build
   später erneut starten. Hält der Fehler an, Log aus
   `/work/build-845g7/tmp-glibc/work/…/temp/log.do_fetch` sichern.
+- **`rosetta error: Unimplemented syscall number …`, Exit-Code 133:** Ein
+  x86-Programm nutzt einen Linux-Syscall, den Rosetta nicht kennt. Für
+  `qemu-img` (Nr. 282) ist das im Layer behoben. Taucht eine andere Nummer
+  auf, Programmname und Nummer melden.
 - **Einzelnes Paket schlägt fehl:** Die letzte Zeile mit `ERROR:` nennt
   Rezept und Logdatei. Die Logdatei ist der Ausgangspunkt zur Fehlersuche.
