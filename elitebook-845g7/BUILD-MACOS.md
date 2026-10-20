@@ -94,8 +94,17 @@ den Build `build-845g7` an und trägt den 845-G7-Layer ein. Eine Frage von
 ```bash
 cd /work
 openxt/bordel/bordel -i 845g7 certs create all
+
+# Erst nur alle Quellen herunterladen: tote Download-Links fallen so nach
+# Minuten auf statt mitten im stundenlangen Build.
+/work/OpenXT/elitebook-845g7/fetch-all.sh /work
+
 openxt/bordel/bordel -i 845g7 build
 ```
+
+`fetch-all.sh` endet mit „All sources fetched.“ oder einer Liste der Rezepte,
+deren Download fehlgeschlagen ist. Diese Liste brauchst du, wenn etwas nicht
+geht.
 
 - `certs create all` erzeugt Test-Zertifikate zum Signieren der
   Kernel-Module und des Update-Repositorys. Das ist für den Eigenbedarf

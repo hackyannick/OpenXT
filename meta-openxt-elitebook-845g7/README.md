@@ -24,6 +24,10 @@ for build, BIOS and installation instructions and known limitations.
   AMD microcode, 1 GiB dom0).
 - `recipes-openxt/xenclient-ndvm-tweaks`: `rtw88_pci disable_aspm=1`.
 - `recipes-graphics/vglass`: load amdgpu the same way as radeon.
+- `recipes-core/ovmf`, `recipes-extended/qemu-dm`: workarounds for dead
+  upstream download links (Intel PREBOOT.EXE, wiki.qemu-project.org), ported
+  from apertussolutions/xenclient-oe. These are not 845 G7 specific and can be
+  dropped once xenclient-oe master carries equivalent fixes.
 
 Note that this layer makes the build AMD-specific: the replaced `openxt.cfg`
 no longer starts tboot, so Intel machines installed from this build lose

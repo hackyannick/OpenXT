@@ -21,6 +21,8 @@ den offiziellen OpenXT-Stand (`openxt-manifest` + `bordel`) aufgesetzt.
 | Sensoren | `k10temp` fehlt | `CONFIG_SENSORS_K10TEMP=m` |
 | WLAN (NDVM) | Realtek RTL8822CE (`rtw88`) fehlt | `CONFIG_RTW88_8822CE=m`, Firmware `rtw88/rtw8822c*`, `disable_aspm=1` |
 | Ethernet (NDVM) | Firmware für RTL8111H fehlt | `linux-firmware-rtl8168` |
+| OVMF (UEFI-Gäste) | Intel hat `PREBOOT.EXE` (E1000-PXE-Treiber) vom Server genommen → Download schlägt fehl, Build bricht ab | OVMF ohne E1000 bauen (wie in `apertussolutions/xenclient-oe`); UEFI-Gäste verlieren nur PXE-Boot über die emulierte e1000-Karte |
+| QEMU (Device Model) | `wiki.qemu-project.org/download` existiert nicht mehr | Gleiches Tarball von `download.qemu.org` (Prüfsummen unverändert) |
 | Boot (xen.efi) | `openxt.cfg` startet immer tboot/Intel TXT und lädt Intel-Microcode | AMD-`openxt.cfg` ohne tboot/SINIT, AMD-Microcode (Fam. 17h), dom0 1 GiB |
 
 Alle Kernel-Optionen werden beim Build geprüft: Fällt eine Option wegen
