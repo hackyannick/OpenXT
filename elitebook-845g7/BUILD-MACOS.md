@@ -8,13 +8,14 @@ x86-Server; die Befehle sind in beiden Fällen dieselben.
 | | Mac lokal (Rosetta) | x86-Server in der Cloud |
 |---|---|---|
 | Kosten | keine | Stundenmiete, nach dem Build löschen |
-| Dauer | lang, weil jeder Compiler emuliert wird | deutlich kürzer bei 16+ echten Kernen |
+| Dauer | rund 1 Tag (MacBook Pro M4, 8 Threads, Erfahrungswert) | deutlich kürzer bei 16+ echten Kernen |
 | Speicher | ~200 GB frei auf dem Mac (Docker-Disk) | Server mit ≥ 300 GB Disk wählen |
 | Nebenwirkung | Mac ist stundenlang ausgelastet | keine |
 
-Grobe Zahlen, nicht gemessen: Ein OpenXT-Komplettbuild braucht auf einer
-schnellen x86-Maschine mehrere Stunden. Unter Rosetta kann es ein Mehrfaches
-davon sein. Spätere Builds sind dank Cache viel schneller.
+Erfahrungswert: Der erste Komplettbuild hat auf einem MacBook Pro M4 unter
+OrbStack/Rosetta mit `OPENXT_THREADS=8` grob einen Tag gedauert (geschätzt,
+Abbrüche abgezogen). Spätere Builds sind dank Cache viel schneller: Nach einer
+Änderung am Layer wird nur neu gebaut, was davon betroffen ist.
 
 ---
 
