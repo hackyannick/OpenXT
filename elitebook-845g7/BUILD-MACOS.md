@@ -216,9 +216,13 @@ Installation und BIOS-Einstellungen am EliteBook: siehe [README.md](README.md).
 - **Build bricht mit „No space left on device“ ab:** Docker-Disk-Limit
   erhöhen (Docker Desktop) bzw. Platz auf dem Mac schaffen. Mit
   `docker system df` siehst du den Verbrauch.
-- **Build bricht mit „Killed“ oder OOM ab:** `OPENXT_THREADS` verkleinern. Den
-  Wert in `/work/build-845g7/conf/local.conf` anpassen (unten stehen
-  `BB_NUMBER_THREADS` und `PARALLEL_MAKE`).
+- **Build bricht mit „Killed“ oder OOM ab** (z. B. `fatal error: Killed signal
+  terminated program cc1plus`): Dem Compiler ist der Speicher ausgegangen.
+  Am häufigsten trifft das WebKitGTK (Browser der UI-VM), das pro Job bis zu
+  3 GB braucht. `setup-workspace.sh` begrenzt WebKit dafür auf einen Job pro
+  4 GB RAM. Reicht das nicht, in `/work/build-845g7/conf/local.conf` den Wert
+  bei `PARALLEL_MAKE_pn-webkitgtk` bzw. allgemein `BB_NUMBER_THREADS` und
+  `PARALLEL_MAKE` verkleinern oder Docker/OrbStack mehr RAM geben.
 - **Downloads scheitern** (`do_fetch` failed): Ein Teil der Quellen kommt vom
   OpenXT-Mirror `openxt.ainfosec.com`. Ist der nicht erreichbar, den Build
   später erneut starten. Hält der Fehler an, Log aus

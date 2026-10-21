@@ -77,6 +77,22 @@ PARALLEL_MAKE = "-j ${OPENXT_THREADS}"
 EOT
 fi
 
+# Each webkitgtk compile job (unified sources) needs up to ~3 GB of RAM, and
+# other recipes build at the same time; with one job per CPU the OOM killer
+# stops the build. Allow one job per 4 GB, capped at the general parallelism.
+if ! grep -q "^PARALLEL_MAKE_pn-webkitgtk" "${conf}/local.conf"; then
+    mem_gb=$(( $(awk '/^MemTotal:/ { print $2 }' /proc/meminfo) / 1024 / 1024 ))
+    jobs="${OPENXT_THREADS:-$(nproc)}"
+    webkit_jobs=$(( mem_gb / 4 ))
+    [ "${webkit_jobs}" -gt "${jobs}" ] && webkit_jobs="${jobs}"
+    [ "${webkit_jobs}" -lt 1 ] && webkit_jobs=1
+    cat >> "${conf}/local.conf" << EOT
+
+# webkitgtk: one compile job per 4 GB RAM (${mem_gb} GB seen at setup)
+PARALLEL_MAKE_pn-webkitgtk = "-j ${webkit_jobs}"
+EOT
+fi
+
 echo
 echo "Workspace ready: ${workspace}/build-${build_id}"
 echo "Next steps:"
