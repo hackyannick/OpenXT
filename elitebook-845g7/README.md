@@ -97,7 +97,8 @@ MacBook Pro M4 (siehe [BUILD-MACOS.md](BUILD-MACOS.md)):
 | Tastatur, Touchpad | ✅ |
 | WLAN (NDVM) | ✅ Netze werden gefunden |
 | Akkuanzeige | ✅ |
-| WLAN-Verbindung, Gast-VMs, Ton, Mikrofon, Webcam, Standby | noch nicht getestet |
+| Gast-VM (HVM, AMD-V) | ✅ Windows-XP-Setup startet aus dem ISO |
+| WLAN-Verbindung, Ton, Mikrofon, Webcam, Standby | noch nicht getestet |
 
 ## Bekannte Einschränkungen
 
