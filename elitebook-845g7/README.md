@@ -84,20 +84,31 @@ einen USB-Stick geschrieben werden.
    Kernel und `microcode_amd_fam17h.bin` auf die EFI-Systempartition und
    legt die EFI-Boot-Einträge an.
 
+## Getesteter Stand
+
+Getestet auf einem HP EliteBook 845 G7, gebaut mit diesem Repository auf einem
+MacBook Pro M4 (siehe [BUILD-MACOS.md](BUILD-MACOS.md)):
+
+| Funktion | Status |
+|---|---|
+| Installer (UEFI, vom 1:1 geschriebenen USB-Stick) | ✅ |
+| Xen-Start ohne tboot, dom0, Service-VMs | ✅ |
+| Oberfläche (UIVM, vGlass) | ✅ reagiert flüssig |
+| Tastatur, Touchpad | ✅ |
+| WLAN (NDVM) | ✅ Netze werden gefunden |
+| Akkuanzeige | ✅ |
+| WLAN-Verbindung, Gast-VMs, Ton, Mikrofon, Webcam, Standby | noch nicht getestet |
+
 ## Bekannte Einschränkungen
 
 - **Kein Measured Launch / keine DRTM.** Die TXT-basierte Vertrauenskette von
   OpenXT ist Intel-only. Eine AMD-Variante (SKINIT, z. B. über TrenchBoot)
   gibt es in OpenXT nicht.
-- **Ungetestet auf echter Hardware.** Die Änderungen sind gegen die Kconfig von
-  Linux 6.1.38 und per BitBake-Parsing gegen die Upstream-Rezepte geprüft, aber ein vollständiger Image-Build
-  und ein Test auf dem Gerät stehen noch aus.
 - **Touchpad unter Xen:** Auf einigen AMD-Laptops wird der GPIO-Interrupt
-  (IRQ 7) unter Xen falsch konfiguriert, sodass das Touchpad nicht reagiert
+  (IRQ 7) unter Xen falsch konfiguriert
   ([xen-devel-Diskussion](https://old-list-archives.xen.org/archives/html/xen-devel/2023-12/msg01766.html)).
-  Ein [Qubes-HCL-Bericht](https://forum.qubes-os.org/t/hcl-hp-elitebook-845-g7/31452)
-  meldet für das 845 G7 ein funktionierendes Touchpad unter Xen 4.17. Falls es
-  bei dir nicht geht: auf der ESP in `EFI/OpenXT/openxt.cfg` an die
+  Auf dem getesteten 845 G7 funktioniert das Touchpad. Falls es auf einem
+  anderen Gerät nicht reagiert: auf der ESP in `EFI/OpenXT/openxt.cfg` an die
   `options=`-Zeile von `[openxt-normal]` `ioapic_ack=new` anhängen.
 - **Suspend:** Laut demselben HCL-Bericht funktioniert Standby unter Xen.
   Falls das BIOS nur „Modern Standby“ (S0ix) anbietet, geht es nicht, weil
