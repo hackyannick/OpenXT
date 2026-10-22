@@ -179,6 +179,13 @@ Server danach löschen, sonst läuft die Miete weiter.
 
 ## ISO auf einen USB-Stick schreiben (macOS)
 
+> **Kein Ventoy.** Der Installer sucht sein Paket-Repository (`packages.main`)
+> direkt auf den Partitionen des USB-Sticks. Bei Ventoy liegt das ISO nur als
+> Datei auf dem Stick, der Installer bootet zwar, bricht aber nach
+> „Detecting repository location…“ mit „Install did not succeed“ ab. Das ISO
+> muss 1:1 auf den Stick geschrieben werden: auf dem Mac mit `dd` (unten),
+> unter Windows mit Rufus im **DD-Modus** oder mit balenaEtcher.
+
 **Achtung: Der Stick wird komplett überschrieben. Die richtige Disk-Nummer
 prüfen, eine falsche Nummer löscht die falsche Platte.**
 

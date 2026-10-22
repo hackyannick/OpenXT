@@ -74,7 +74,9 @@ einen USB-Stick geschrieben werden.
 
 ## Installation
 
-1. Vom USB-Stick im UEFI-Modus booten.
+1. Vom USB-Stick im UEFI-Modus booten. Das ISO muss 1:1 auf den Stick
+   geschrieben sein (`dd`, Rufus im DD-Modus, balenaEtcher), **nicht** per
+   Ventoy: Dann findet der Installer sein Repository nicht.
 2. Bei der Frage nach **Measured Launch** mit **Nein** antworten. Measured
    Launch basiert auf Intel TXT (tboot/SINIT) und existiert auf AMD nicht;
    mit „Ja“ würde das Versiegeln der Schlüssel fehlschlagen.
