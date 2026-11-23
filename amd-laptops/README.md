@@ -45,11 +45,15 @@ die Kconfig von Linux 6.1.38 und die Upstream-defconfigs getestet.
 
 ## Build
 
-**Schritt-für-Schritt-Anleitung für macOS/Apple Silicon (und Cloud-Server):
-[BUILD-MACOS.md](BUILD-MACOS.md).**
+**Schritt-für-Schritt-Anleitungen:**
+
+- **Windows (WSL2), empfohlen auf x86-Laptops:** [BUILD-WINDOWS.md](BUILD-WINDOWS.md)
+  (ein PowerShell-Skript erledigt alles)
+- **macOS/Apple Silicon und Cloud-Server:** [BUILD-MACOS.md](BUILD-MACOS.md)
 
 Gebaut wird auf x86_64-Linux. Das Dockerfile in [`docker/`](docker) enthält
-alle Abhängigkeiten (Ubuntu 20.04, GHC 8.10.7, `repo`). Auf einem eigenen
+alle Abhängigkeiten (Ubuntu 20.04, GHC 8.10.7, OpenJDK 8, `repo`), installiert
+über `docker/install-build-deps.sh`. Auf einem eigenen
 Linux-Host mit diesen Abhängigkeiten geht es auch direkt:
 
 ```bash

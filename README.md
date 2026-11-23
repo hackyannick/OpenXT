@@ -11,8 +11,8 @@ Inhalt:
 - [`meta-openxt-amd-laptops/`](meta-openxt-amd-laptops) – Yocto-Layer
   mit den Anpassungen (Kernel, Firmware, Boot-Konfiguration, vGlass,
   Build-Fixes für tote Download-Links).
-- [`amd-laptops/`](amd-laptops) – Anleitung zu Build (auch auf macOS/Apple
-  Silicon), Installation, Gerätehinweisen und bekannten Einschränkungen,
+- [`amd-laptops/`](amd-laptops) – Anleitung zu Build (Windows/WSL2,
+  macOS/Apple Silicon), Installation, Gerätehinweisen und bekannten Einschränkungen,
   dazu Einrichtungsskript und Docker-Build-Umgebung.
 
 Die Verzeichnisse hießen früher `meta-openxt-elitebook-845g7/` und
