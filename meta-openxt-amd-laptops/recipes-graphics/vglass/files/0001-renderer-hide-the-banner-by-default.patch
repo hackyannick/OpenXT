@@ -1,0 +1,24 @@
+From: OpenXT AMD laptops layer
+Subject: [PATCH] renderer: hide the banner by default
+
+The banner (focused VM name, classification and battery level) costs
+25 rows of every display and makes 1:1 guest resolutions impossible:
+vGlass scales guests to the area below it without filtering, so every
+guest looks distorted. Default it to 0. It can still be enabled per
+installation via disman (db /disman/banner_height or setBannerHeight).
+
+Upstream-Status: Inappropriate [local policy]
+---
+diff --git a/renderer/common/renderer.cpp b/renderer/common/renderer.cpp
+index c493e01..c426f0c 100644
+--- a/renderer/common/renderer.cpp
++++ b/renderer/common/renderer.cpp
+@@ -13,7 +13,7 @@
+ extern "C" {
+ #include <unistd.h>
+ }
+-int32_t g_banner_height = 25;
++int32_t g_banner_height = 0;
+ uint32_t renderer_t::m_frame_time = 20;
+ 
+ renderer_t::renderer_t(window_manager_t &wm) : m_wm(wm),
