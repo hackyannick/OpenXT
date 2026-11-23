@@ -14,15 +14,21 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 # later stable-4.21 push cannot break the build halfway. Hypervisor, tools
 # and the OCaml xenstored must use the same revision. Bump deliberately to
 # pick up newer fixes.
+#
+# The pin must be visible during parsing: BitBake resolves PV (and with it
+# WORKDIR, the pseudo database and the sysroot paths) from SRCREV before
+# anonymous python runs, so setting SRCREV there left those paths on the
+# AUTOREV commit while the source was the pinned one. That broke do_install
+# (pseudo abort) and do_package as soon as stable-4.21 moved on. The
+# forcevariable override wins over the xenclient-oe bbappend's
+# SRCREV = "${AUTOREV}" regardless of the order the bbappends are applied.
 OPENXT_XEN_SRCREV = "b734d29eea2fac3ac459ac3275a7f8790db50490"
+SRCREV_forcevariable = "${OPENXT_XEN_SRCREV}"
 
 # Swap the patch in place (later patches in the queue depend on it, so it
-# must keep its position) and apply the pin. Done at the end of parsing so it
-# does not depend on the order in which the xenclient-oe bbappend (which sets
-# SRCREV = "${AUTOREV}") and this one are applied.
+# must keep its position). Done at the end of parsing so the full SRC_URI
+# is known.
 python () {
-    d.setVar('SRCREV', d.getVar('OPENXT_XEN_SRCREV'))
-
     old = 'file://kconfig-grant-table-v2-interface.patch'
     new = 'file://kconfig-grant-table-v2-interface-xsa517.patch'
     src = (d.getVar('SRC_URI', False) or '').split()
