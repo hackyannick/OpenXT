@@ -9,3 +9,12 @@
 # The file deliberately has no comments: openxt-measuredlaunch's
 # parse_eficfg greps the raw lines for keywords.
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
+
+# ath11k-xen-msi: stores the real MSI address/data of a Qualcomm ath11k Wi-Fi
+# device for the network VM (ThinkPad Z13 Gen1, WCN6855).
+SRC_URI += "file://ath11k-xen-msi"
+
+do_install_append() {
+    install -d ${D}${sbindir}
+    install -m 0755 ${WORKDIR}/ath11k-xen-msi ${D}${sbindir}/ath11k-xen-msi
+}

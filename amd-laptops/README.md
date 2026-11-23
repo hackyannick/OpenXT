@@ -26,7 +26,7 @@ offiziellen OpenXT-Stand (`openxt-manifest` + `bordel`) aufgesetzt.
 | TPM | Nur `tpm_tis`; AMD-fTPM und Pluton brauchen `tpm_crb` | `CONFIG_TCG_CRB` in dom0 und Installer, `tpm_crb` im dom0-initramfs |
 | HP-Hotkeys | `HP_WMI` steht seit Linux 6.1 hinter einem neuen Menü und wird still verworfen | `CONFIG_X86_PLATFORM_DRIVERS_HP=y` + `CONFIG_HP_WMI` |
 | Sensoren | `k10temp` fehlt | `CONFIG_SENSORS_K10TEMP=m` |
-| WLAN (NDVM) | Realtek RTL8822CE (`rtw88`, 845 G7) und Qualcomm WCN6855 (`ath11k`, Z13) fehlen | `CONFIG_RTW88_8822CE=m` + `disable_aspm=1`, `CONFIG_ATH11K_PCI=m`, Firmware `rtw88/rtw8822c*` und `ath11k/WCN6855` |
+| WLAN (NDVM) | Realtek RTL8822CE (`rtw88`, 845 G7) und Qualcomm WCN6855 (`ath11k`, Z13) fehlen | `CONFIG_RTW88_8822CE=m` + `disable_aspm=1`, `CONFIG_ATH11K_PCI=m`, Firmware `rtw88/rtw8822c*` und `ath11k/WCN6855`; ath11k-Patch für MSI unter Passthrough + `ath11k-xen-msi` ([Z13: WLAN einrichten](thinkpad-z13-gen1.md#wlan-einrichten)) |
 | Ethernet (NDVM) | Firmware für RTL8111H fehlt | `linux-firmware-rtl8168` |
 | OVMF (UEFI-Gäste) | Intel hat `PREBOOT.EXE` (E1000-PXE-Treiber) vom Server genommen → Download schlägt fehl, Build bricht ab | OVMF ohne E1000 bauen (wie in `apertussolutions/xenclient-oe`); UEFI-Gäste verlieren nur PXE-Boot über die emulierte e1000-Karte |
 | QEMU (Device Model) | `wiki.qemu-project.org/download` existiert nicht mehr | Gleiches Tarball von `download.qemu.org` (Prüfsummen unverändert) |

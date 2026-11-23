@@ -1,0 +1,75 @@
+From: OpenXT AMD laptops layer
+Subject: [PATCH] wifi: ath11k: pci: allow host MSI address/data for passthrough
+
+The WLAN firmware raises interrupts by writing the MSI address/data the
+driver hands it over MHI, and the driver takes them from the guest's MSI
+capability. With the device passed through to a Xen guest those are
+virtual values; Xen programs different ones into the real capability, so
+the firmware's writes go nowhere: QMI/HTT timeouts (-110) and
+"firmware crashed: MHI_CB_EE_RDDM".
+
+Add module parameters to pass the real values, read from the device's MSI
+capability in dom0. Same parameter names as the patch discussed in
+QubesOS/qubes-issues#10526, so existing instructions apply. Without the
+parameters nothing changes.
+
+Upstream-Status: Inappropriate [workaround for PCI passthrough]
+---
+diff --git a/drivers/net/wireless/ath/ath11k/pci.c b/drivers/net/wireless/ath/ath11k/pci.c
+index 3c6005ab..a11f7e8e 100644
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -23,6 +23,25 @@
+ #define TCSR_SOC_HW_VERSION_MAJOR_MASK	GENMASK(11, 8)
+ #define TCSR_SOC_HW_VERSION_MINOR_MASK	GENMASK(7, 0)
+ 
++/*
++ * The device's firmware raises interrupts by writing the MSI address/data
++ * it is given by the driver. In a VM with the device passed through (e.g. a
++ * Xen network VM), the values in the guest's MSI capability are virtual:
++ * the hypervisor programs different ones into the real capability, and
++ * writes with the guest values never arrive (MHI/QMI timeouts, firmware
++ * crash). These parameters pass the real values, as read from the MSI
++ * capability in the host (dom0), so the firmware uses those instead.
++ */
++static unsigned long host_msi_vector_addr;
++module_param(host_msi_vector_addr, ulong, 0444);
++MODULE_PARM_DESC(host_msi_vector_addr,
++		 "Host MSI address for PCI passthrough to a VM (0: use the guest's)");
++
++static unsigned long host_msi_vector_data;
++module_param(host_msi_vector_data, ulong, 0444);
++MODULE_PARM_DESC(host_msi_vector_data,
++		 "Host MSI data for PCI passthrough to a VM (used with host_msi_vector_addr)");
++
+ #define QCA6390_DEVICE_ID		0x1101
+ #define QCN9074_DEVICE_ID		0x1104
+ #define WCN6855_DEVICE_ID		0x1103
+@@ -458,6 +477,15 @@ static int ath11k_pci_alloc_msi(struct ath11k_pci *ab_pci)
+ 		ab->pci.msi.addr_hi = 0;
+ 	}
+ 
++	if (host_msi_vector_addr) {
++		ab->pci.msi.addr_lo = lower_32_bits(host_msi_vector_addr);
++		ab->pci.msi.addr_hi = upper_32_bits(host_msi_vector_addr);
++		ab->pci.msi.ep_base_data = host_msi_vector_data;
++		ath11k_info(ab, "using host MSI address 0x%08x%08x data 0x%x\n",
++			    ab->pci.msi.addr_hi, ab->pci.msi.addr_lo,
++			    ab->pci.msi.ep_base_data);
++	}
++
+ 	ath11k_dbg(ab, ATH11K_DBG_PCI, "msi base data is %d\n", ab->pci.msi.ep_base_data);
+ 
+ 	return 0;
+@@ -485,7 +513,10 @@ static int ath11k_pci_config_msi_data(struct ath11k_pci *ab_pci)
+ 		return -EINVAL;
+ 	}
+ 
+-	ab_pci->ab->pci.msi.ep_base_data = msi_desc->msg.data;
++	if (host_msi_vector_addr)
++		ab_pci->ab->pci.msi.ep_base_data = host_msi_vector_data;
++	else
++		ab_pci->ab->pci.msi.ep_base_data = msi_desc->msg.data;
+ 
+ 	ath11k_dbg(ab_pci->ab, ATH11K_DBG_PCI, "pci after request_irq msi_ep_base_data %d\n",
+ 		   ab_pci->ab->pci.msi.ep_base_data);

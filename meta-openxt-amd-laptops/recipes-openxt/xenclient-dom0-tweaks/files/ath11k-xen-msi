@@ -1,0 +1,112 @@
+#!/bin/bash
+#
+# ath11k-xen-msi - make Qualcomm ath11k Wi-Fi (e.g. WCN6855 in the ThinkPad
+# Z13) work in the network VM.
+#
+# The Wi-Fi firmware raises interrupts by writing the MSI address/data the
+# driver gives it. In the network VM the driver only sees virtual values;
+# Xen programs different ones into the real MSI capability. This tool reads
+# the real values here in dom0 and stores them in the network VM's domstore.
+# The network VM's ath11k-xen-msi init script loads ath11k_pci with them
+# (module parameters host_msi_vector_addr/host_msi_vector_data, added by a
+# kernel patch in the AMD laptops layer).
+#
+# The network VM must be running and must have loaded ath11k_pci once
+# (it does that at boot, with or without stored values).
+#
+# Usage: ath11k-xen-msi [-u VM_UUID] [save|show|clear]   (default: save)
+
+set -euo pipefail
+
+vm_uuid="00000000-0000-0000-0000-000000000002"   # service-ndvm "Network"
+pci_root="${ATH11K_XEN_MSI_PCI_ROOT:-/sys/bus/pci/devices}"   # for testing
+
+usage() {
+    sed -n '/^# Usage:/s/^# //p' "$0" >&2
+    exit 1
+}
+
+while getopts "u:h" opt; do
+    case "${opt}" in
+        u) vm_uuid="${OPTARG}" ;;
+        *) usage ;;
+    esac
+done
+shift $((OPTIND - 1))
+action="${1:-save}"
+key="/dom-store/${vm_uuid}/ath11k"
+
+die() {
+    echo "ath11k-xen-msi: $*" >&2
+    exit 1
+}
+
+# Read an unsigned little-endian value of 1, 2 or 4 bytes from config space.
+cfg() {
+    od -An -tu"$2" -j "$1" -N "$2" "${dev}/config" | tr -d ' \n'
+}
+
+find_device() {
+    local d
+    for d in "${pci_root}"/*; do
+        [ "$(cat "${d}/vendor")" = "0x17cb" ] || continue
+        case "$(cat "${d}/device")" in
+            0x1101|0x1103) echo "${d}"; return 0 ;;   # QCA6390, WCN6855
+        esac
+    done
+    return 1
+}
+
+read_msi() {
+    local status ptr id ctrl lo hi=0 data i
+    status=$(cfg 6 2)
+    (( status & 0x10 )) || die "${dev##*/} has no capability list"
+    ptr=$(( $(cfg 52 1) & 0xfc ))
+    for (( i = 0; i < 48 && ptr != 0; i++ )); do
+        id=$(cfg "${ptr}" 1)
+        [ "${id}" -eq 5 ] && break
+        ptr=$(( $(cfg $((ptr + 1)) 1) & 0xfc ))
+    done
+    { [ "${ptr}" -ne 0 ] && [ "${id}" -eq 5 ]; } || die "${dev##*/} has no MSI capability"
+
+    ctrl=$(cfg $((ptr + 2)) 2)
+    lo=$(cfg $((ptr + 4)) 4)
+    if (( ctrl & 0x80 )); then
+        hi=$(cfg $((ptr + 8)) 4)
+        data=$(cfg $((ptr + 12)) 2)
+    else
+        data=$(cfg $((ptr + 8)) 2)
+    fi
+
+    # x86 MSI addresses are 0xFEExxxxx. Anything else means Xen has not set
+    # up MSI for the device yet.
+    if (( hi != 0 || (lo & 0xfff00000) != 0xfee00000 )); then
+        die "MSI of ${dev##*/} is not set up (address 0x$(printf '%08x%08x' "${hi}" "${lo}")).
+Start the network VM, wait until it has booted, then run this again."
+    fi
+
+    msi_addr=$(printf '0x%x' $(( (hi << 32) | lo )))
+    msi_data=$(printf '0x%x' "${data}")
+}
+
+case "${action}" in
+    save|show)
+        dev=$(find_device) || die "no Qualcomm ath11k Wi-Fi device found"
+        read_msi
+        echo "${dev##*/}: host MSI address ${msi_addr}, data ${msi_data}"
+        if [ "${action}" = save ]; then
+            db-write "${key}/host-msi-addr" "${msi_addr}"
+            db-write "${key}/host-msi-data" "${msi_data}"
+            echo "Stored for VM ${vm_uuid}. Reboot to apply (or restart the network VM)."
+        else
+            echo "Stored: address '$(db-read "${key}/host-msi-addr")', data '$(db-read "${key}/host-msi-data")'"
+        fi
+        ;;
+    clear)
+        db-rm "${key}"
+        echo "Removed ${key}."
+        ;;
+    *)
+        usage
+        ;;
+esac

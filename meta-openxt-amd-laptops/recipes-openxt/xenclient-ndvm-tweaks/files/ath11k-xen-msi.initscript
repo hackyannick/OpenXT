@@ -1,0 +1,78 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          ath11k-xen-msi
+# Required-Start:    $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: Load ath11k_pci with the host MSI values from dom0
+### END INIT INFO
+#
+# The ath11k Wi-Fi firmware writes its interrupts to the MSI address/data
+# the driver gives it. In this VM those are virtual, so ath11k_pci gets the
+# real ones (stored by "ath11k-xen-msi" in dom0, in this VM's domstore) as
+# module parameters. Without stored values the driver is loaded as is; that
+# also lets dom0 read the real values for the first time.
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+TAG=ath11k-xen-msi
+
+log() {
+    echo "${TAG}: $*"
+    logger -t "${TAG}" "$*" 2>/dev/null || true
+}
+
+have_device() {
+    for d in /sys/bus/pci/devices/*; do
+        [ "$(cat "${d}/vendor" 2>/dev/null)" = "0x17cb" ] || continue
+        case "$(cat "${d}/device" 2>/dev/null)" in
+            0x1101|0x1103) return 0 ;;
+        esac
+    done
+    return 1
+}
+
+valid() {
+    case "$1" in
+        ""|*[!0-9a-fA-Fx]*) return 1 ;;
+    esac
+    return 0
+}
+
+start() {
+    have_device || return 0
+    [ -d /sys/module/ath11k_pci ] && return 0
+
+    # dom0's database is reached over argo; retry while it comes up.
+    addr="" data="" tries=0 reached=no
+    while [ "${tries}" -lt 15 ]; do
+        if addr=$(db-read-dom0 ath11k/host-msi-addr 2>/dev/null); then
+            data=$(db-read-dom0 ath11k/host-msi-data 2>/dev/null) || data=""
+            reached=yes
+            break
+        fi
+        tries=$((tries + 1))
+        sleep 1
+    done
+
+    if valid "${addr}" && valid "${data}"; then
+        log "loading ath11k_pci with host MSI address ${addr}, data ${data}"
+        modprobe ath11k_pci host_msi_vector_addr="${addr}" host_msi_vector_data="${data}"
+        return 0
+    fi
+
+    if [ "${reached}" = no ]; then
+        log "could not read the dom0 database; loading ath11k_pci without host MSI values"
+    elif [ -n "${addr}${data}" ]; then
+        log "invalid host MSI values '${addr}' '${data}'; run 'ath11k-xen-msi' in dom0 again"
+    else
+        log "no host MSI values stored; Wi-Fi will not work until 'ath11k-xen-msi' is run in dom0 and the system is restarted"
+    fi
+    modprobe ath11k_pci
+}
+
+case "$1" in
+    start) start ;;
+    stop|restart|force-reload|status) ;;
+    *) echo "Usage: $0 start" >&2; exit 1 ;;
+esac
+exit 0

@@ -9,6 +9,11 @@ OPENXT_KERNEL_FRAGMENTS_openxt-installer = "installer-amd-laptops.cfg"
 
 SRC_URI += "${@' '.join('file://' + f for f in d.getVar('OPENXT_KERNEL_FRAGMENTS').split())}"
 
+# NDVM: let ath11k (Qualcomm WCN6855 Wi-Fi, ThinkPad Z13) use the host's MSI
+# address/data under PCI passthrough. See the patch and ath11k-xen-msi in
+# recipes-openxt.
+SRC_URI_append_xenclient-ndvm = " file://0001-wifi-ath11k-pci-allow-host-MSI-address-data-for-pass.patch"
+
 # A postfunc rather than do_configure_append: kernel-module-signing.bbclass
 # appends code that returns early from do_configure when module signing is
 # disabled, which would skip anything appended after it.

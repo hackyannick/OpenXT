@@ -31,7 +31,7 @@ Die Menünamen unterscheiden sich je nach BIOS-Version leicht.
 | Komponente | ID | Treiber | Hinweis |
 |---|---|---|---|
 | Radeon 660M/680M (Yellow Carp) | | `amdgpu` | Firmware `amdgpu/yellow_carp_*`; Display Core DCN 3.1 |
-| WLAN Qualcomm WCN6855 (NFA725A, Wi-Fi 6E) | `17cb:1103` | `ath11k_pci` (NDVM) | Firmware `ath11k/WCN6855/hw2.0` (hw2.1 verlinkt); fällt bei der Durchreichung auf einen einzelnen MSI-Interrupt zurück |
+| WLAN Qualcomm WCN6855 (NFA725A, Wi-Fi 6E) | `17cb:1103` | `ath11k_pci` (NDVM) | Firmware `ath11k/WCN6855/hw2.0` (hw2.1 verlinkt); braucht einmalig `ath11k-xen-msi`, siehe [WLAN einrichten](#wlan-einrichten) |
 | Touchpad (ELAN ForcePad) | `04f3:3231` | `i2c-hid-acpi`, `hid-multitouch`, `pinctrl-amd` | |
 | TrackPoint | | `psmouse` | unter Linux teils eingeschränkt |
 | Tastatur, Hotkeys | | `atkbd`, `thinkpad_acpi` | |
@@ -47,6 +47,54 @@ Quellen für die IDs: Hardware-Tabelle der ArchWiki-Seite
 (dort Audio und TrackPoint als „teilweise“ markiert) und
 [ThinkPad Z series](https://en.wikipedia.org/wiki/ThinkPad_Z_series);
 Treiberzuordnung aus dem Quellcode von Linux 6.1.38.
+
+## WLAN einrichten
+
+Der WLAN-Chip läuft wie bei OpenXT üblich in der Netzwerk-VM (NDVM), an die
+er per PCI-Passthrough durchgereicht wird. Der Treiber `ath11k` hat dabei
+ein bekanntes Problem: Er teilt der WLAN-Firmware mit, wohin sie ihre
+Interrupts (MSI) schreiben soll, und nimmt dafür die Werte, die die VM sieht.
+Das sind unter Xen aber nur virtuelle Werte; die echten setzt Xen. Die
+Firmware schreibt ins Leere, das WLAN taucht nicht auf. Dasselbe Problem hat
+Qubes OS ([qubes-issues#10526](https://github.com/QubesOS/qubes-issues/issues/10526)).
+
+Dieser Layer bringt dafür mit:
+
+- einen Kernel-Patch für die NDVM: `ath11k_pci` nimmt die echten Werte als
+  Modulparameter `host_msi_vector_addr`/`host_msi_vector_data` an,
+- das Werkzeug `ath11k-xen-msi` im dom0: liest die echten Werte aus der
+  Hardware und speichert sie dauerhaft für die NDVM,
+- ein Startskript in der NDVM, das den Treiber mit diesen Werten lädt.
+
+**Einmalig nach der Installation:**
+
+1. OpenXT normal starten und etwa eine Minute warten, bis die NDVM läuft.
+2. Konsole im dom0 öffnen (siehe [README.md → Konsole](README.md#konsole-dom0))
+   und ausführen:
+   ```sh
+   ath11k-xen-msi
+   ```
+   Ausgabe etwa: `0000:02:00.0: host MSI address 0xfee0a000, data 0x4000`
+   und `Stored for VM …`.
+3. Neu starten. Danach sollte das WLAN in der OpenXT-Oberfläche erscheinen.
+
+`ath11k-xen-msi show` zeigt die aktuellen und die gespeicherten Werte,
+`ath11k-xen-msi clear` löscht sie. Stimmen beide nach einem Update nicht mehr
+überein und ist das WLAN weg, `ath11k-xen-msi` einfach noch einmal ausführen
+und neu starten.
+
+**Wenn es nicht klappt,** Meldungen der NDVM ansehen: im dom0 mit `xl list`
+die ID der Netzwerk-VM suchen, `xl console <ID>` öffnen (Anmeldung als
+`root` ohne Passwort, beenden mit Ctrl-]) und dort:
+
+```sh
+dmesg | grep -iE "ath11k|mhi|qmi"
+grep ath11k-xen-msi /var/log/messages
+cat /sys/module/ath11k_pci/parameters/host_msi_vector_*
+```
+
+Gut ist `using host MSI address …` und danach keine Zeilen mit `-110`,
+`timeout` oder `firmware crashed`.
 
 ## Erwartungen und offene Punkte
 
@@ -64,4 +112,5 @@ Treiberzuordnung aus dem Quellcode von Linux 6.1.38.
 
 | Funktion | Status |
 |---|---|
-| Alles | noch nicht auf dem Gerät getestet |
+| WLAN | fehlte im ersten Test; Fix (`ath11k-xen-msi`) gebaut, noch nicht auf dem Gerät getestet |
+| Übriges | noch nicht auf dem Gerät getestet |
