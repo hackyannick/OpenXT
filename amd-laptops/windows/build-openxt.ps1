@@ -25,7 +25,7 @@
     Name of the WSL distribution to create/use. Default: OpenXT-Build.
 
 .PARAMETER InstallDir
-    Where the distribution's virtual disk is stored. Needs about 200 GB free.
+    Where the distribution's virtual disk is stored. Needs about 220 GB free (incl. a 16 GB swap file).
 
 .PARAMETER RepoUrl
     Repository with the AMD laptops layer.
@@ -106,8 +106,8 @@ try {
     if (-not (Test-DistroExists)) {
         $drive = Get-PSDrive -Name $InstallDir.Substring(0, 1)
         $freeGb = [math]::Floor($drive.Free / 1GB)
-        if ($freeGb -lt 200) {
-            Write-Warning "Only $freeGb GB free on $($drive.Name):. The build needs about 200 GB."
+        if ($freeGb -lt 220) {
+            Write-Warning "Only $freeGb GB free on $($drive.Name):. The build needs about 220 GB."
         }
 
         New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null

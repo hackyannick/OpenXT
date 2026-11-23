@@ -22,7 +22,7 @@ also deutlich schneller als auf einem Mac mit Apple Silicon. Das Skript
 
 - Windows 10 22H2 oder Windows 11, Virtualisierung im BIOS an (beim Z13:
   *Security → Virtualization → AMD Virtualization Technology*).
-- Rund **200 GB** freier Platz auf dem Laufwerk für `%LOCALAPPDATA%`
+- Rund **220 GB** freier Platz (davon 16 GB Auslagerungsdatei) auf dem Laufwerk für `%LOCALAPPDATA%`
   (änderbar mit `-InstallDir`).
 - Netzteil angeschlossen. Das Skript verhindert den Standby, solange es
   läuft; das Zuklappen des Deckels kann je nach Energieeinstellung trotzdem
@@ -112,8 +112,12 @@ löscht die Build-Umgebung samt aller Build-Daten.
 
 - **„WSL is not installed“:** Den Einrichtungsschritt oben ausführen und
   neu starten.
-- **Build bricht mit `Killed` ab:** zu wenig RAM für WSL, siehe `.wslconfig`
-  oben, oder mit `-Threads` weniger Parallelität wählen.
+- **Build bricht mit `Killed` / `exit code 137` ab:** Speichermangel.
+  Das Skript legt vor jedem Build eine Auslagerungsdatei `/swapfile`
+  (16 GB) in der Build-Distribution an und schaltet sie ein. Reicht das
+  nicht, WSL mehr RAM geben (siehe `.wslconfig` oben) oder mit `-Threads`
+  weniger Parallelität wählen. Danach einfach neu starten, BitBake macht
+  beim abgebrochenen Paket weiter.
 - **Download-Fehler (`do_fetch`):** `-Step fetch` erneut ausführen; bleibt
   ein Paket hängen, die Zeilen mit „Failed downloads“ melden.
 - Alles Weitere wie in [BUILD-MACOS.md → Wenn etwas schiefgeht](BUILD-MACOS.md#wenn-etwas-schiefgeht).
