@@ -1,0 +1,27 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          ath11k-xen-msi
+# Required-Start:    $local_fs xenmgr
+# Default-Start:     5
+# Default-Stop:
+# Short-Description: Keep the host MSI values for ath11k Wi-Fi up to date
+### END INIT INFO
+#
+# Runs "ath11k-xen-msi auto" in the background: once the network VM has set
+# up the Qualcomm Wi-Fi device, store its real MSI address/data for the
+# network VM and restart that VM if they changed. Logs to syslog
+# (grep ath11k-xen-msi /var/log/messages).
+
+case "$1" in
+    start)
+        [ -x /usr/sbin/ath11k-xen-msi ] || exit 0
+        /usr/sbin/ath11k-xen-msi auto </dev/null >/dev/null 2>&1 &
+        ;;
+    stop|restart|force-reload|status)
+        ;;
+    *)
+        echo "Usage: $0 start" >&2
+        exit 1
+        ;;
+esac
+exit 0

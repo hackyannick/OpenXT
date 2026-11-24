@@ -11,7 +11,7 @@
 # the driver gives it. In this VM those are virtual, so ath11k_pci gets the
 # real ones (stored by "ath11k-xen-msi" in dom0, in this VM's domstore) as
 # module parameters. Without stored values the driver is loaded as is; that
-# also lets dom0 read the real values for the first time.
+# lets dom0 read the real values, store them and restart this VM.
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 TAG=ath11k-xen-msi
@@ -63,9 +63,9 @@ start() {
     if [ "${reached}" = no ]; then
         log "could not read the dom0 database; loading ath11k_pci without host MSI values"
     elif [ -n "${addr}${data}" ]; then
-        log "invalid host MSI values '${addr}' '${data}'; run 'ath11k-xen-msi' in dom0 again"
+        log "invalid host MSI values '${addr}' '${data}'; run 'ath11k-xen-msi clear' in dom0 and reboot"
     else
-        log "no host MSI values stored; Wi-Fi will not work until 'ath11k-xen-msi' is run in dom0 and the system is restarted"
+        log "no host MSI values stored yet; dom0 (ath11k-xen-msi) stores them once the driver is loaded and restarts this VM"
     fi
     modprobe ath11k_pci
 }

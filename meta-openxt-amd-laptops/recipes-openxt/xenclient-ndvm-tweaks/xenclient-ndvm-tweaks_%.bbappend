@@ -7,8 +7,8 @@ SRC_URI += " \
 "
 
 # ath11k (Qualcomm WCN6855, ThinkPad Z13): loaded by the init script with
-# the host MSI values from dom0 instead of by udev. See ath11k-xen-msi in
-# xenclient-dom0-tweaks.
+# the host MSI values from dom0 instead of by udev. dom0 side:
+# recipes-openxt/ath11k-xen-msi.
 inherit update-rc.d
 INITSCRIPT_NAME = "ath11k-xen-msi"
 INITSCRIPT_PARAMS = "defaults 40"

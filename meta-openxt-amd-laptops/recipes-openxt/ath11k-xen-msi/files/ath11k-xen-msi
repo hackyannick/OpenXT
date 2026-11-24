@@ -1,0 +1,187 @@
+#!/bin/bash
+#
+# ath11k-xen-msi - make Qualcomm ath11k Wi-Fi (e.g. WCN6855 in the ThinkPad
+# Z13) work in the network VM.
+#
+# The Wi-Fi firmware raises interrupts by writing the MSI address/data the
+# driver gives it. In the network VM the driver only sees virtual values;
+# Xen programs different ones into the real MSI capability. This tool reads
+# the real values here in dom0 and stores them in the network VM's domstore.
+# The network VM's ath11k-xen-msi init script loads ath11k_pci with them
+# (module parameters host_msi_vector_addr/host_msi_vector_data, added by a
+# kernel patch in the AMD laptops layer).
+#
+# Normally nothing needs to be done by hand: /etc/init.d/ath11k-xen-msi runs
+# "auto" at every boot. It waits until the network VM has loaded the driver,
+# stores the values if they changed and then restarts the network VM once so
+# the driver picks them up.
+#
+# Usage: ath11k-xen-msi [-u VM_UUID] [save|show|clear|auto]   (default: save)
+#   save   read the values now and store them (network VM must be running)
+#   show   print the current and the stored values
+#   clear  remove the stored values
+#   auto   wait for the values, store them if changed, restart the network VM
+
+set -euo pipefail
+
+vm_uuid="00000000-0000-0000-0000-000000000002"   # service-ndvm "Network"
+pci_root="${ATH11K_XEN_MSI_PCI_ROOT:-/sys/bus/pci/devices}"   # for testing
+run_dir="${ATH11K_XEN_MSI_RUN_DIR:-/var/run}"                  # for testing
+auto_timeout="${ATH11K_XEN_MSI_TIMEOUT:-600}"                  # seconds
+poll="${ATH11K_XEN_MSI_POLL:-5}"                               # seconds
+tag="ath11k-xen-msi"
+
+usage() {
+    sed -n '/^# Usage:/,/^$/s/^# \{0,1\}//p' "$0" >&2
+    exit 1
+}
+
+while getopts "u:h" opt; do
+    case "${opt}" in
+        u) vm_uuid="${OPTARG}" ;;
+        *) usage ;;
+    esac
+done
+shift $((OPTIND - 1))
+action="${1:-save}"
+key="/dom-store/${vm_uuid}/ath11k"
+
+# In "auto" mode (init script, no terminal) messages go to syslog.
+log() {
+    if [ "${action}" = auto ]; then
+        logger -t "${tag}" "$*" 2>/dev/null || true
+    else
+        echo "$*"
+    fi
+}
+
+die() {
+    log "error: $*"
+    [ "${action}" = auto ] || echo "${tag}: $*" >&2
+    exit 1
+}
+
+# Read an unsigned little-endian value of 1, 2 or 4 bytes from config space.
+cfg() {
+    od -An -tu"$2" -j "$1" -N "$2" "${dev}/config" | tr -d ' \n'
+}
+
+find_device() {
+    local d
+    for d in "${pci_root}"/*; do
+        [ "$(cat "${d}/vendor" 2>/dev/null)" = "0x17cb" ] || continue
+        case "$(cat "${d}/device" 2>/dev/null)" in
+            0x1101|0x1103) echo "${d}"; return 0 ;;   # QCA6390, WCN6855
+        esac
+    done
+    return 1
+}
+
+# Sets msi_addr/msi_data. Returns 1 while Xen has not set up MSI for the
+# device yet (address not 0xFEExxxxx); exits on a malformed device.
+read_msi() {
+    local status ptr id=0 ctrl lo hi=0 data i
+    status=$(cfg 6 2)
+    (( status & 0x10 )) || die "${dev##*/} has no capability list"
+    ptr=$(( $(cfg 52 1) & 0xfc ))
+    for (( i = 0; i < 48 && ptr != 0; i++ )); do
+        id=$(cfg "${ptr}" 1)
+        [ "${id}" -eq 5 ] && break
+        ptr=$(( $(cfg $((ptr + 1)) 1) & 0xfc ))
+    done
+    { [ "${ptr}" -ne 0 ] && [ "${id}" -eq 5 ]; } || die "${dev##*/} has no MSI capability"
+
+    ctrl=$(cfg $((ptr + 2)) 2)
+    lo=$(cfg $((ptr + 4)) 4)
+    if (( ctrl & 0x80 )); then
+        hi=$(cfg $((ptr + 8)) 4)
+        data=$(cfg $((ptr + 12)) 2)
+    else
+        data=$(cfg $((ptr + 8)) 2)
+    fi
+
+    msi_addr=$(printf '0x%x' $(( (hi << 32) | lo )))
+    msi_data=$(printf '0x%x' "${data}")
+    (( hi == 0 && (lo & 0xfff00000) == 0xfee00000 ))
+}
+
+read_stored() {
+    stored_addr=$(db-read "${key}/host-msi-addr" 2>/dev/null || true)
+    stored_data=$(db-read "${key}/host-msi-data" 2>/dev/null || true)
+}
+
+store() {
+    db-write "${key}/host-msi-addr" "${msi_addr}"
+    db-write "${key}/host-msi-data" "${msi_data}"
+}
+
+do_auto() {
+    local waited=0 prev="" stable=0 flag="${run_dir}/${tag}.restarted"
+
+    dev=$(find_device) || exit 0
+
+    # The device is reset when it is assigned to the network VM, so a valid
+    # address was programmed by Xen in this boot. Wait until it has not
+    # changed for two polls to avoid catching the driver mid-setup.
+    while (( waited < auto_timeout )); do
+        if read_msi; then
+            if [ "${msi_addr} ${msi_data}" = "${prev}" ]; then
+                stable=$((stable + 1))
+            else
+                stable=0
+                prev="${msi_addr} ${msi_data}"
+            fi
+            (( stable >= 2 )) && break
+        fi
+        sleep "${poll}"
+        waited=$((waited + poll))
+    done
+    if (( stable < 2 )); then
+        log "MSI of ${dev##*/} not set up within ${auto_timeout}s (network VM not running?)"
+        exit 0
+    fi
+
+    read_stored
+    if [ "${stored_addr}" = "${msi_addr}" ] && [ "${stored_data}" = "${msi_data}" ]; then
+        log "${dev##*/}: stored host MSI address ${msi_addr}, data ${msi_data} are current"
+        exit 0
+    fi
+
+    store
+    log "${dev##*/}: stored host MSI address ${msi_addr}, data ${msi_data} (was '${stored_addr}' '${stored_data}')"
+
+    # At most one restart per boot, in case the values change every time.
+    if [ -e "${flag}" ]; then
+        log "values changed again after restarting the network VM; not restarting it again"
+        exit 0
+    fi
+    : > "${flag}"
+    log "restarting the network VM (${vm_uuid}) so ath11k_pci uses the new values"
+    xec-vm -u "${vm_uuid}" reboot || log "restarting the network VM failed; reboot to apply"
+}
+
+case "${action}" in
+    save|show)
+        dev=$(find_device) || die "no Qualcomm ath11k Wi-Fi device found"
+        read_msi || die "MSI of ${dev##*/} is not set up (address ${msi_addr}).
+Start the network VM, wait until it has booted, then run this again."
+        echo "${dev##*/}: host MSI address ${msi_addr}, data ${msi_data}"
+        if [ "${action}" = save ]; then
+            store
+            echo "Stored for VM ${vm_uuid}. Reboot to apply (or restart the network VM)."
+        else
+            read_stored
+            echo "Stored: address '${stored_addr}', data '${stored_data}'"
+        fi
+        ;;
+    clear)
+        db-rm "${key}"
+        echo "Removed ${key}."
+        ;;
+    auto)
+        do_auto
+        ;;
+    *)
+        usage
+        ;;
+esac
